@@ -1,28 +1,35 @@
 plugins {
     alias(libs.plugins.android.application)
-    alias(libs.plugins.kotlin.android)
-    kotlin("kapt") version "1.7.21"
+
+    alias(libs.plugins.ksp)
+    alias(libs.plugins.hilt)
+    alias(libs.plugins.kotlin.compose)
+
+
+
 }
 
 android {
-    compileSdk = 34
+    compileSdk = 37
+
     namespace = "cloud.pablos.overload"
 
     defaultConfig {
         applicationId = "cloud.pablos.overload"
         minSdk = 26
-        targetSdk = 34
-        versionCode = 172
-        versionName = "0.17.2"
+        targetSdk = 36
+
+
+        versionCode = 1731
+        versionName = "0.17.31"
         vectorDrawables.useSupportLibrary = true
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
-        kapt {
-            arguments {
-                arg("room.schemaLocation", "$projectDir/schemas")
-                arg("room.exportSchema", "true")
-            }
+        ksp {
+            arg("room.schemaLocation", "$projectDir/schemas")
+            arg("room.exportSchema", "true")
         }
+
     }
 
     signingConfigs {
@@ -46,6 +53,7 @@ android {
 
         named("release") {
             isMinifyEnabled = true
+            isShrinkResources = true
             signingConfig = signingConfigs.getByName("debug")
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
@@ -67,10 +75,10 @@ android {
     sourceSets {
         val sharedTestDir = "src/sharedTest/java"
         getByName("test") {
-            java.srcDir(sharedTestDir)
+            java.directories += sharedTestDir
         }
         getByName("androidTest") {
-            java.srcDir(sharedTestDir)
+            java.directories += sharedTestDir
         }
     }
 
@@ -79,12 +87,13 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
 
+
+
+
     buildFeatures {
         compose = true
-    }
-
-    composeOptions {
-        kotlinCompilerExtensionVersion = libs.versions.compose.compiler.get()
+        buildConfig = true
+        resValues = true
     }
 }
 
@@ -94,7 +103,13 @@ dependencies {
 
     implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.room.ktx)
-    kapt(libs.androidx.room.compiler)
+    ksp(libs.androidx.room.compiler)
+
+    implementation(libs.hilt.android)
+    ksp(libs.hilt.compiler)
+    implementation(libs.hilt.navigation.compose)
+
+
 
     implementation(libs.gson)
 
@@ -104,6 +119,7 @@ dependencies {
     androidTestImplementation(composeBom)
 
     implementation(libs.androidx.core.ktx)
+    implementation(libs.androidx.core.splashscreen)
     implementation(libs.kotlin.stdlib)
     implementation(libs.kotlinx.coroutines.android)
 

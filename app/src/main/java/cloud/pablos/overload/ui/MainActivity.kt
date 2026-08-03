@@ -1,25 +1,22 @@
 package cloud.pablos.overload.ui
 
 import android.annotation.SuppressLint
+import android.content.Intent
 import android.content.pm.ActivityInfo
 import android.content.res.Configuration
 import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.activity.result.contract.ActivityResultContracts
+import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
 import androidx.annotation.RequiresApi
 import androidx.compose.material3.windowsizeclass.ExperimentalMaterial3WindowSizeClassApi
 import androidx.compose.material3.windowsizeclass.calculateWindowSizeClass
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.core.view.WindowCompat
-import androidx.lifecycle.ViewModel
-import androidx.lifecycle.ViewModelProvider
+import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.lifecycle.lifecycleScope
-import androidx.room.Room
-import cloud.pablos.overload.R
 import cloud.pablos.overload.data.OverloadDatabase
 import cloud.pablos.overload.data.category.CategoryViewModel
 import cloud.pablos.overload.data.item.ItemViewModel
@@ -28,36 +25,22 @@ import cloud.pablos.overload.ui.tabs.configurations.importJsonFile
 import cloud.pablos.overload.ui.tabs.configurations.showImportFailedToast
 import cloud.pablos.overload.ui.theme.OverloadTheme
 import com.google.accompanist.adaptive.calculateDisplayFeatures
+import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
+import javax.inject.Inject
+import androidx.activity.result.contract.ActivityResultContracts
 
+
+
+@AndroidEntryPoint
 class MainActivity : ComponentActivity() {
-    private val db by lazy {
-        Room.databaseBuilder(
-            applicationContext,
-            OverloadDatabase::class.java,
-            "items",
-        ).build()
-    }
+    @Inject
+    lateinit var db: OverloadDatabase
 
-    private val categoryViewModel by viewModels<CategoryViewModel>(
-        factoryProducer = {
-            object : ViewModelProvider.Factory {
-                override fun <T : ViewModel> create(modelClass: Class<T>): T {
-                    return CategoryViewModel(db.categoryDao()) as T
-                }
-            }
-        },
-    )
+    private val categoryViewModel by viewModels<CategoryViewModel>()
+    private val itemViewModel by viewModels<ItemViewModel>()
 
-    private val itemViewModel by viewModels<ItemViewModel>(
-        factoryProducer = {
-            object : ViewModelProvider.Factory {
-                override fun <T : ViewModel> create(modelClass: Class<T>): T {
-                    return ItemViewModel(db.itemDao()) as T
-                }
-            }
-        },
-    )
+
 
     private val filePickerLauncher =
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
@@ -79,10 +62,13 @@ class MainActivity : ComponentActivity() {
     @RequiresApi(Build.VERSION_CODES.S)
     @OptIn(ExperimentalMaterial3WindowSizeClassApi::class)
     override fun onCreate(savedInstanceState: Bundle?) {
+        installSplashScreen()
+        enableEdgeToEdge()
         super.onCreate(savedInstanceState)
-        setTheme(R.style.Theme_Overload)
 
-        WindowCompat.setDecorFitsSystemWindows(window, false)
+        window.isNavigationBarContrastEnforced = false
+
+
 
         val screenLayoutSize =
             resources.configuration.screenLayout and Configuration.SCREENLAYOUT_SIZE_MASK
@@ -119,5 +105,10 @@ class MainActivity : ComponentActivity() {
 
         handleIntent(intent, lifecycleScope, db, this, contentResolver)
         intent = null
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
     }
 }
